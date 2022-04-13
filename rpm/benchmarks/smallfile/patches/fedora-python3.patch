@@ -1,0 +1,9 @@
+diff -ru smallfile-1.0.1/smallfile_cli.py working.smallfile/smallfile_cli.py
+--- smallfile-1.0.1/smallfile_cli.py	2020-03-13 14:48:56.000000000 -0400
++++ working.smallfile/smallfile_cli.py	2020-04-21 22:16:20.830591347 -0400
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ # because it uses the "multiprocessing" python module instead of "threading"

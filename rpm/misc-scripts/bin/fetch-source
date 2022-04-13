@@ -1,0 +1,77 @@
+#! /bin/bash
+
+# fetch the sources for any of the benchmarks that pbench uses
+# and build a tarball in $TBDIR.
+TBDIR=$HOME/rpmbuild/SOURCES
+
+kind="${1}"
+url="${2}"
+version="${3}"
+unpackdir="${4}"
+
+# We clone the latest. The version is magic, passed in explicitly.
+function fetch_git {
+    local url="${1}"
+    local version="${2}"
+
+    local name=${url##*/}
+    name=${name%%.git}
+    git clone ${url} ${name}
+    ln -sf ${name} ${name}-${version}
+    tar --exclude='*/.git*' -zhcf ${TBDIR}/${name}-${version}.tar.gz ${name}-${version}
+}
+
+# We fetch a tarball from upstream and do impedance-matching games
+# to put it in a standard form for our purposes.
+function fetch_tarball {
+    set -x
+    local url="${1}"
+
+    local tbname=${url##*/}
+    # get rid of tarball-related suffixes
+    local name=${tbname%.tgz}
+    name=${name%.tar.xz}
+    name=${name%.tar.gz}
+    name=${name%.tar.bz2}
+    name=${name%.tar}
+    # use ${name} for dname but override if ${2} is defined
+    local dname=${2:-${name}}
+    # use ${name} for unpackdir but override if ${3} is defined
+    local unpackdir=${3:-$name}
+
+    # get the tarball, unpack it, rename the directory and repack it
+    # with a standard name in the standard place.
+    wget ${url}
+    tar xf ${tbname}
+    rm -rf ${dname}
+    mv ${unpackdir} ${dname}
+    rm ${tbname}
+    tar -zcf ${TBDIR}/${dname}.tar.gz ${dname}
+}
+
+function fetch_tarball_rename {
+    local url="${1}"
+    local name="${2}"
+
+    curl -L -X GET "${url}" -o "${TBDIR}/${name}"
+}
+
+case $kind in
+    git)
+        fetch_git "${url}" "${version}"
+        rc=${?}
+        ;;
+    rename-tarball)
+        fetch_tarball_rename "${url}" "${version}"
+        rc=${?}
+        ;;
+    tarball)
+        fetch_tarball "${url}" "${version}" "${unpackdir}"
+        rc=${?}
+        ;;
+    *)
+        printf -- "Don't know that one: '%s'\n" "${kind}" >&2
+        rc=1
+        ;;
+esac
+exit ${rc}

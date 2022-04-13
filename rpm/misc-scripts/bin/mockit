@@ -1,0 +1,30 @@
+#! /bin/bash
+
+ECHO=
+case $1 in
+    -d|--debug)
+        ECHO=echo
+        shift
+        ;;
+esac
+
+distro=$1
+cenv=$2
+specfile=$3
+version=$4
+arch=${5:x86_64}
+
+package=${specfile%.spec}
+rpmdir=~/rpmbuild/RPMS
+srpmdir=~/rpmbuild/SRPMS
+
+release=$(grep Release $specfile | sed 's/^.*: *//')
+
+mockconfig="$(getconf.py mock-config $distro)"
+if [ -z "$mockconfig" ] ;then
+    echo "ERROR: No mock-config option in $distro section or no such section in $CONFIG." >&2
+    exit 1
+fi
+
+${ECHO} mock -r "${mockconfig}-$arch" --define="configuration_environment ${cenv}" \
+     --resultdir=${rpmdir}/${distro}/${arch}/ ${srpmdir}/${package}-${version}-${release}.src.rpm

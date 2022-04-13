@@ -1,0 +1,35 @@
+%define __installdir /usr/local/pbench-linpack-%{version}
+Name:		linpack
+Version:	11.1.3
+Release:     	6%{?gdist}%{!?gdist:}
+Summary:	Linpack
+License:	GPLv3+
+URL:		http://www.netlib.org
+Source0:	http://lacrosse.corp.redhat.com/~psatpute/linpack-11.1.3.tar.gz
+Buildarch:	noarch
+Autoreq:        0
+Obsoletes:      linpack
+
+%description
+Linpack 11.1.3
+
+%prep
+%autosetup -n %{name}-%{version}
+
+%install
+export QA_SKIP_RPATHS=1
+
+install -m 0755 -d %{buildroot}/%{__installdir}
+
+cp -rf benchmarks %{buildroot}/%{__installdir}
+
+%files
+%{__installdir}/benchmarks
+%doc doc/ readme.txt
+
+%changelog
+* Tue Feb 15 2022 Vishal Vijayraghavan <vishalvvr@fedoraproject.org> - 11.1.3-5
+- src url change
+
+* Tue Feb 15 2022 Vishal Vijayraghavan <vishalvvr@fedoraproject.org> - 11.1.3-3
+- initial build

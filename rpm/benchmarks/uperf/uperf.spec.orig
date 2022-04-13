@@ -1,0 +1,53 @@
+Name:           uperf
+Version:        
+Release:        
+Summary:        Unified Network Performance Tool
+
+License:        GPLv3+
+URL:            http://www.uperf.org/
+Source0:        %{name}-%{version}.tar.gz
+
+BuildRequires:  gcc
+
+Patch1: uperf-service.patch
+
+%description
+Unified Network Performance Tool
+
+%global debug_package %{nil}
+
+%prep
+%setup -q
+
+# %patch1 -p1
+
+%build
+CFLAGS=-lpthread ./configure --disable-debug --disable-sctp
+make
+
+%install
+rm -rf %{buildroot}
+
+make %{?_smp_mflags} DESTDIR=$RPM_BUILD_ROOT install
+
+%post
+
+%preun
+
+%postun
+
+%files
+/usr/local/bin/uperf
+/usr/local/share/connect.xml
+/usr/local/share/iperf.xml
+/usr/local/share/ldap.xml
+/usr/local/share/netperf.xml
+/usr/local/share/oltpnet.xml
+/usr/local/share/oraclerac.xml
+/usr/local/share/sctp.xml
+/usr/local/share/specweb.xml
+/usr/local/share/ssl.xml
+/usr/local/share/telnet.xml
+/usr/local/share/two-hosts.xml
+
+%doc

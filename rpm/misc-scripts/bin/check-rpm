@@ -1,0 +1,56 @@
+#! /bin/bash
+
+# this is a quick-and-dirt script to check the various internal
+# RPMs. It only checks that the pbench_web_server for the
+# given environment (production by default) to make sure that
+# this set of wires have not been crossed. It could do a *lot*
+# more checking.
+
+VERSION=${1}
+[[ $VERSION == "" ]] && exit 1
+ENV=${2:-production}
+
+# ugh
+RPM=pbench-agent-internal-${VERSION}-1.noarch.rpm
+
+TMP=/tmp/check-rpm.$$
+trap "rm -rf $TMP" EXIT INT QUIT
+
+mkdir -p $TMP
+
+# N.B. this assumes that the config file has been set by
+# sourcing the profile script in the rpm/ directory.
+# It will not work with any other config file, but it's
+# good enough: PATH will not be set correctly to find
+# this script otherwise; and if it is executed using
+# a pathname, it will exit with status 2 (below).
+repohost=$(getconf.py host repo)
+user=$(getconf.py user repo)
+repodir=$(getconf.py dir repo)/$ENV
+distros=$(getconf.py -l rpmdirs repo)
+
+if [[ $repohost == "" ]] || [[ $user ==  "" ]] ||
+       [[ $repodir == "" ]] || [[ $distros == "" ]] ;then
+    exit 2
+fi
+
+
+cd $TMP
+for distro in $distros ;do
+    path=$user@$repohost:$repodir/$distro/x86_64/$RPM
+    # need to have set up keys
+    scp $path . > /dev/null 2>&1
+    status=$?
+    if [[ $status != 0 ]] ;then
+        echo scp failed: $status "($path)"
+        continue
+    fi
+    rpm2cpio $RPM | cpio -dium > /dev/null 2>&1
+    rm $RPM
+    cfgfile=opt/pbench-agent-internal/config/pbench-agent.cfg
+    if [ -f $cfgfile ] ;then
+        echo -n "$distro: "
+        getconf.py -C $cfgfile pbench_web_server pbench-agent
+    fi
+    rm -rf opt
+done

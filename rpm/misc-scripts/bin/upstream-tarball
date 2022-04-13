@@ -1,0 +1,117 @@
+#!/bin/bash
+# set -x
+
+PROG=$(basename $0)
+
+_GH_OWNER=distributed-system-analysis
+_GH_BRANCH=master
+
+case $# in
+    3)
+        _srctree=$1
+        package=$2
+        seqno=$3
+        ;;
+    5)
+        _srctree=$1
+        package=$2
+        seqno=$3
+        _GH_OWNER=$4
+        _GH_BRANCH=$5
+        ;;
+    *)
+        echo "Usage: $PROG <srctree> <package> [ <github_owner> <github_branch>]"
+        exit 1
+esac
+
+# assumption: this is where a previous call to fetch-gihub has cloned
+# the upstream "pbench" repo. We split off this script from
+# fetch-github, so we can execute it multiple times (for server,
+# agent, web-server, dashboard builds) without having to download the
+# repo every time.
+_WRKDIR="/var/tmp/${_GH_OWNER}_pbench_${_GH_BRANCH}"
+
+cd $_WRKDIR > /dev/null
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+# step into the cloned "pbench" repo
+cd pbench > /dev/null
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+echo -n "g" > ${_WRKDIR}/pbench-${package}.SHA1
+git rev-parse --short HEAD >> ${_WRKDIR}/pbench-${package}.SHA1
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+# No dashboard any longer.
+
+# We now also pluck the web-server components and bundle them with the server bits
+# in the server RPM (the web-server RPM remains however: users install it on their
+# own machines for local viewing of results).
+case "$package" in
+     server)
+         contents="server/ lib/configtools/ web-server/"
+         ;;
+     agent)
+         contents="agent/ lib/configtools/"
+         ;;
+esac
+# OK - you can let go of your nose now.
+
+# This gets the contents of the component: server, agent, web-server
+# (the "real" components) - or dashboard (the "virtual" component).
+#
+# N.B. the exclude patterns are very important for web-server and
+# dashboard: for web-server, we exclude the dashboard (v0.4) bits; for
+# dashboard, we exclude the web-server (v0.2, v0.3) bits.
+
+trap "rm -f ${_WRKDIR}/pbench/MANIFEST ${_WRKDIR}/tar-ball-file.list" EXIT QUIT INT
+
+# make the manifest: all the regular files in the ${contents} directories, filtered through the exclusion patterns.
+find -L ${contents} \
+    \( -type f ! -executable -printf "664 %p\n" \) \
+ -o \( -type f -executable -printf "775 %p\n" \) \
+ | fgrep -v -f ${_srctree}/rpm/pbench-${package}/exclude.pats > ${_WRKDIR}/pbench/MANIFEST
+
+echo "664 SHA1" >> ${_WRKDIR}/pbench/MANIFEST
+echo "664 SEQNO" >> ${_WRKDIR}/pbench/MANIFEST
+# add the MANIFEST to the MANIFEST - oh, what a tangled web we weave...
+echo "664 MANIFEST" >>  ${_WRKDIR}/pbench/MANIFEST
+
+cd .. > /dev/null
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+_version=$(cat ${_WRKDIR}/pbench/${package}/VERSION)
+if [ "${_version}" = "" ]; then
+    echo "Failed to fetch version" >&2
+    exit 1
+fi
+
+# The Makefiles use this file when they call set-version-release, so
+# it has to stick around after this script finishes.
+cp ${_WRKDIR}/pbench/${package}/VERSION  ${_WRKDIR}/pbench-${package}.VERSION
+cp ${_WRKDIR}/pbench-${package}.SHA1 ${_WRKDIR}/pbench/SHA1
+echo ${seqno} > ${_WRKDIR}/pbench/SEQNO
+
+rm -f pbench-${package}-${_version}
+ln -s pbench pbench-${package}-${_version}
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+# Use the MANIFEST to construct the list of files that will go into the tarball
+awk '{print $2}' ${_WRKDIR}/pbench-${package}-${_version}/MANIFEST | sed "s/^/pbench-${package}-${_version}\//" > ${_WRKDIR}/tar-ball-file.list
+
+tar -zcf ${_WRKDIR}/pbench-${package}-${_version}.tar.gz -T ${_WRKDIR}/tar-ball-file.list
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+exit 0

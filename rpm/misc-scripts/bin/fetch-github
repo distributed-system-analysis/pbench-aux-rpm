@@ -1,0 +1,57 @@
+#!/bin/bash
+
+PROG=$(basename $0)
+
+_GH_OWNER=distributed-system-analysis
+_GH_BRANCH=master
+
+case $# in
+    2)
+        _srctree=$1
+        package=$2
+        ;;
+    4)
+        _srctree=$1
+        package=$2
+        _GH_OWNER=$3
+        _GH_BRANCH=$4
+        ;;
+    *)
+        echo "Usage: $PROG <srctree> <package> [ <github_owner> <github_branch>]"
+        exit 1
+esac
+
+# This is where we clone the upstream "pbench" repo
+_WRKDIR="/var/tmp/${_GH_OWNER}_pbench_${_GH_BRANCH}"
+mkdir $_WRKDIR
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+cd $_WRKDIR > /dev/null
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+git clone https://github.com/$_GH_OWNER/pbench
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+cd pbench > /dev/null
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+git checkout origin/$_GH_BRANCH
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+git submodule init
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+git submodule update
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+exit 0

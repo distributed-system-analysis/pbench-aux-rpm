@@ -1,0 +1,28 @@
+#! /bin/bash
+# set -x
+target=$1
+environment=$2
+distro=$3
+
+if [ "$target" = "list-rpms" ] ;then
+    repos=$(getconf.py -l repos $environment)
+else
+    repos=$(getconf.py -l test-repos $environment)
+fi
+
+rpm=${HOME}/rpmbuild/RPMS/$distro
+
+distros=$(getconf.py -l rpmdirs $environment rpm)
+
+for distro in $distros ;do
+    for repo in $repos ;do
+        host=$(getconf.py host $repo)
+        dir=$(getconf.py dir $repo | sed 's/#ENV#/'$environment'/')
+        user=$(getconf.py user $environment)
+        id=$(getconf.py id $repo)
+
+        ssh -i $id $user@$host "cd ${dir}/$distro/x86_64 && pwd && ls -l"
+    done
+done
+
+exit 0

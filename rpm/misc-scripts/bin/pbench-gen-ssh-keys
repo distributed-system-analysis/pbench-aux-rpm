@@ -1,0 +1,94 @@
+#! /bin/bash
+
+ECHO=
+case $1 in
+    --debug)
+        ECHO=echo
+        shift
+        ;;
+esac
+
+case $# in
+    2|3)
+    ;;
+    *)
+        echo "Usage: pbench-gen-ssh-keys [--debug] <DIR> <ENV> [<VERSION>]"
+        exit 1
+esac
+
+top=$1
+cenv=$2
+cenvtype=$(getconf.py envtype ${cenv})
+if [ -z "$cenvtype" ] ;then
+    cenvtype=NONVERSIONED
+fi
+version=$3
+
+# generate new keys if necessary
+function new_keys {
+    rc=0
+    if [ -d $top/$cenv/ssh/$version ] ;then
+        # make sure the private key exists
+        if [ ! -f $top/$cenv/ssh/$version/id_rsa ] ;then
+            rc=1
+        fi
+        # make sure the mode is correct
+        $ECHO chmod +600 $top/$cenv/ssh/$version/id_rsa
+    else
+        $ECHO mkdir -p $top/$cenv/ssh/$version
+        $ECHO pushd $top/$cenv/ssh/$version
+        PUB=./id_rsa.pub.pbench-$version
+
+        # generate a key pair for the new release if necessary.
+        # empty passphrase.
+        # modify the id tag on the public key file.
+        # the public key has to be copied to the server and added to ~pbench/.ssh/authorized_keys
+        # manually - add it to the top of the file.
+
+        $ECHO ssh-keygen -t rsa -f ./id_rsa -N '' && \
+            ssh-keygen -y -f ./id_rsa |
+            sed -E "s/(ssh-rsa [[:graph:]]+)( .*)?$/\1 pbench@pbench-$version/" > ${PUB}
+        rc=$?
+        # make sure the mode is correct
+        $ECHO chmod 600 ./id_rsa
+        $ECHO rm -f ./id_rsa.pub
+        $ECHO popd
+    fi
+    if [ "$rc" == 0 ] ;then
+        $ECHO cp $top/$cenv/ssh/$version/id_rsa $top/$cenv/ssh
+    fi
+    return $rc
+}
+
+case $cenvtype in
+    VERSIONED)
+        # version is mandatory in these cases
+        if [ -z "$version" ] ;then
+            echo "Usage: pbench-gen-ssh-keys <DIR> <ENVTYPE> <VERSION>"
+            exit 1
+        fi
+        if new_keys ;then
+            :
+        else
+            echo "$0: error generating new keys"
+            exit 3
+        fi
+        exit 0
+        ;;
+    NONVERSIONED)
+        if [ ! -f $top/$cenv/ssh/id_rsa ] ;then
+            $ECHO mkdir -p $top/$cenv/ssh
+            $ECHO cd $top/$cenv/ssh
+            PUB=./id_rsa.pub.pbench
+            $ECHO ssh-keygen -t rsa -f ./id_rsa -N '' && \
+                ssh-keygen -y -f ./id_rsa > ${PUB} &&\
+                sed -i "s/$/ pbench@pbench/" ${PUB}
+        fi
+        # make sure the mode is correct
+        $ECHO chmod 600  $top/$cenv/ssh/id_rsa
+        exit 0
+        ;;
+    *)
+        echo "Unkown environment type ${cenvtype}"
+        exit 2
+esac

@@ -1,0 +1,38 @@
+diff --git a/src/ssl.c b/src/ssl.c
+index 1352434..6507f26 100644
+--- a/src/ssl.c
++++ b/src/ssl.c
+@@ -25,6 +25,8 @@
+ #endif /* HAVE_CONFIG_H */
+ 
+ #include <stdio.h>
++#include <string.h>
++#include <errno.h>
+ #include <stdlib.h>
+ #include <sys/socket.h>		/* basic socket definitions */
+ #include <netdb.h>
+@@ -152,11 +154,11 @@ ssl_init(void *arg)
+ 	int i;
+ 
+ 	if (IS_MASTER(options)) {
+-		if (file_present("server.pem") == 0)
+-			ctx = initialize_ctx("server.pem", PASS, NULL);
++		if (file_present("/usr/share/uperf/server.pem") == 0)
++			ctx = initialize_ctx("/usr/share/uperf/server.pem", PASS, NULL);
+ 	} else {
+-		if (file_present("client.pem") == 0)
+-			ctx = initialize_ctx("client.pem", PASS, NULL);
++		if (file_present("/usr/share/uperf/client.pem") == 0)
++			ctx = initialize_ctx("/usr/share/uperf/client.pem", PASS, NULL);
+ 	}
+ 	if (ctx == NULL)
+ 		return (1);
+@@ -394,7 +396,7 @@ initialize_ctx(char *keyfile, char *password, const char *method)
+ #else
+ 	SSL_METHOD *meth;
+ #endif
+-	SSL_CTX *ctx;
++	SSL_CTX *ctx = NULL;
+ 
+ 	SSL_library_init();
+ 

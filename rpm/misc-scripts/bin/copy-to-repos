@@ -1,0 +1,54 @@
+#! /bin/bash
+# set -x
+# we assume CONFIG has been set at the outset
+
+ECHO=
+case $1 in
+    -d|--debug)
+        ECHO=echo
+        shift
+        ;;
+esac
+
+target=$1
+environment=$2
+package=$3
+
+
+if [[ "$target" =~ "test" ]] ;then
+    repos=$(getconf.py -l test-repos $environment)
+else
+    repos=$(getconf.py -l repos $environment)
+fi
+
+if [ -z "$repos" ] ;then
+    echo "repos is empty"
+    exit 1
+fi
+
+rpm=${HOME}/rpmbuild/RPMS
+
+distros=$(getconf.py -l rpmdirs $environment rpm)
+
+if [ -z "$distros" ] ;then
+    echo "distros is empty"
+    exit 1
+fi
+
+for distro in $distros ;do
+    for repo in $repos ;do
+        host=$(getconf.py host $repo)
+        dir=$(getconf.py dir $repo | sed 's/#ENV#/'$environment'/')
+        user=$(getconf.py user $environment)
+        id=$(getconf.py id $repo)
+
+        # create the directory if necessary
+        $ECHO ssh -i $id $user@$host "mkdir -p $dir/$distro/noarch"
+        # copy?
+        if [[ "$target" =~ "push" ]];then 
+            $ECHO rsync -ave "ssh -i $id" $rpm/noarch/$package $user@$host:$dir/$distro/noarch
+        fi
+        $ECHO ssh -i $id $user@$host "cd $dir/$distro; rm -rf repodata; createrepo ."
+    done
+done
+exit 0

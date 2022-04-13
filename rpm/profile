@@ -1,0 +1,73 @@
+# -*- mode: shell-script -*-
+pathins() {
+    if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
+        PATH="$1:$PATH"
+    fi
+}
+
+# from https://github.com/distributed-system-analysis/pbench/blob/master/agent/bench-scripts/unittests#L59
+function remove_path {
+    # PATH (${2}) => /bin:/opt/a dir/bin:/sbin
+    WORK=:${2}:
+    # WORK => :/bin:/opt/a dir/bin:/sbin:
+    REMOVE=${1}
+    WORK=${WORK/:${REMOVE}:/:}
+    # WORK => :/bin:/sbin:
+    WORK=${WORK%:}
+    WORK=${WORK#:}
+    #PATH=${WORK}
+    # PATH => /bin:/sbin
+    echo ${WORK}
+}
+
+pathdel() {
+    PATH=$(remove_path $1 $PATH)
+}
+
+prefix=$PWD
+
+# make sure we are somewhere inside pbench/rpm hierarchy
+if echo $prefix | grep -q /rpm ;then
+    # go up until we are in the top-level pbench directory
+    while [ ! -d $prefix/rpm ] ;do
+        prefix=$(dirname $prefix)
+        if [ "$prefix" == "/" ] ;then
+            echo "*** WARNING *** could not determine pbench git repo, $prefix, from \"$PWD\""
+            echo "*** no actions taken ***"
+            unset prefix
+            break
+        fi
+    done
+else
+    unset prefix
+    echo "*** WARNING *** Your current directory is $PWD"
+    echo "*** WARNING *** This profile has to be sourced from somewhere inside the pbench/rpm hierarchy"
+    echo "*** no actions taken ***"
+fi
+
+if [ ! -z "$prefix" ] ;then
+    export PBENCH_TOP=$prefix
+
+    # we need the configtools getconf.py, so get rid
+    # of getconf.py from pbench-agent or pbench-server.
+    pathdel /opt/pbench-agent/util-scripts
+    pathdel /opt/pbench-agent/bench-scripts
+    pathdel /opt/pbench-server/bin
+    unset PYTHONPATH
+    
+    pathins ${PBENCH_TOP}/rpm/misc-scripts/bin
+
+    # create a config file that just points to the local config files, necessary
+    # for making RPMs. N.B. It adds a user-specific directory in front of the
+    # default directory, so that the generic setting of internal-pbench-repo-clone
+    # can be overridden by the locally appropriate one.
+    export CONFIG=${PBENCH_TOP}/rpm/rpm.conf
+    cat > $CONFIG <<EOF
+[config]
+path = $HOME/.config/pbench, ${PBENCH_TOP}/config
+files = pbench-rpm.cfg, pbench-ssh-ids.cfg
+EOF
+fi
+
+unset prefix
+unset -f pathins

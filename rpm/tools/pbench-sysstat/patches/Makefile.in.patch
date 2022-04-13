@@ -1,0 +1,21 @@
+diff -ur pbench-sysstat-12.0.3/Makefile.in pbench-sysstat-12.0.3-at/Makefile.in
+--- pbench-sysstat-12.0.3/Makefile.in	2018-12-14 14:06:43.000000000 +0000
++++ pbench-sysstat-12.0.3-at/Makefile.in	2019-03-13 01:31:31.339667459 +0000
+@@ -357,7 +357,7 @@
+ 	done
+ endif
+ 
+-install_base: all sa1 sa2 sysstat.sysconfig install_man install_nls
++install_base: all sa1 sa2 install_man install_nls
+ 	mkdir -p $(DESTDIR)$(SA_LIB_DIR)
+ 	mkdir -p $(DESTDIR)$(SA_DIR)
+ ifeq ($(CLEAN_SA_DIR),y)
+@@ -378,8 +378,6 @@
+ 	$(INSTALL_BIN) mpstat $(DESTDIR)$(BIN_DIR)
+ 	$(INSTALL_BIN) pidstat $(DESTDIR)$(BIN_DIR)
+ 	$(INSTALL_BIN) cifsiostat $(DESTDIR)$(BIN_DIR)
+-	$(INSTALL_DATA) sysstat.ioconf $(DESTDIR)$(SYSCONFIG_DIR)
+-	$(INSTALL_DATA) sysstat.sysconfig $(DESTDIR)$(SYSCONFIG_DIR)/sysstat
+ ifeq ($(INSTALL_DOC),y)
+ 	$(INSTALL_DATA) CHANGES $(DESTDIR)$(DOC_DIR)
+ 	$(INSTALL_DATA) COPYING $(DESTDIR)$(DOC_DIR)

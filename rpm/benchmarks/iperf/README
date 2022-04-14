@@ -1,8 +1,0 @@
-April 21st, 2020
-
-iperf 2.0.13 is available in Fedora 32, 31, and 30, as well as
-EPEL 6 & 7.  We would probably want to ask for the maintainer
-to add it to EPEL 8.
-
-Also, it fails to compile and build under Fedora, see:
-https://github.com/cloudius-systems/osv-apps/issues/55

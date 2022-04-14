@@ -9,7 +9,15 @@ SPECDIR = ${RPMBUILDDIR}/SPECS
 SRPMDIR = ${RPMBUILDDIR}/SRPMS
 SRCDIR = ${RPMBUILDDIR}/SOURCES
 # we build it only for rhel8 and rhel9
-CHROOTS = -r centos-stream-9-x86_64 -r centos-stream-9-aarch64 -r epel-8-x86_64 -r epel-8-aarch64 -r epel-9-x86_64 -r epel-9-aarch64  #  -r fedora-eln-x86_64 -r fedora-eln-aarch64
+CHROOTS = \
+	-r centos-stream-8-x86_64 \
+	-r centos-stream-8-aarch64 \
+	-r centos-stream-9-x86_64 \
+	-r centos-stream-9-aarch64 \
+	-r epel-8-x86_64 \
+	-r epel-8-aarch64 \
+	-r epel-9-x86_64 \
+	-r epel-9-aarch64
 
 srpm:
 	cp ${TARBALL} patches/*.patch screen.pam ${SRCDIR}
@@ -23,6 +31,5 @@ _copr_user = ${USER}
 endif
 
 copr\
-copr-test\
-copr-perl-test:   srpm
+copr-test:   srpm
 	copr-cli build ${CHROOTS} $(_copr_user)/$(subst copr,pbench,$@) ${SRPMDIR}/${SRPM}

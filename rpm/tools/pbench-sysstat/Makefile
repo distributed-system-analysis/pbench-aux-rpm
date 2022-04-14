@@ -1,7 +1,9 @@
 prog = pbench-sysstat
 version = 12.0.3
 arch = x86_64
+
 # CHROOTS = -r centos-stream-9-x86_64 -r centos-stream-9-aarch64 -r epel-8-x86_64 -r epel-8-aarch64  -r epel-9-x86_64 -r epel-9-aarch64
+
 ifdef COPR_USER
 _copr_user = ${COPR_USER}
 else

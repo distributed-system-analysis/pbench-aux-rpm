@@ -2,7 +2,7 @@
 all:
 	@echo "Default target does nothing, use 'make rpm' to build all SRPMs"
 
-SUBDIRS = dbench fio iozone iperf linpack netperf smallfile stress sysbench uperf
+SUBDIRS = fio uperf
 
 .PHONY: rpm
 rpm\

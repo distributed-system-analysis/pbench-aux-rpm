@@ -31,6 +31,8 @@ BuildRequires:	librdmacm-devel
 BuildRequires: devtoolset-7-toolchain, devtoolset-7-libatomic-devel
 %endif
 
+Patch1:    0001-PATCH-fio-remove-raw-device-support.patch
+
 %description
 fio is an I/O tool that will spawn a number of threads or processes doing
 a particular type of io action as specified by the user.  fio takes a
@@ -41,6 +43,7 @@ one wants to simulate.
 
 %prep
 %setup -q
+%patch1 -p1
 
 pathfix.py -i %{__python3} -pn \
  tools/fio_jsonplus_clat2csv \
@@ -53,7 +56,13 @@ pathfix.py -i %{__python3} -pn \
 %if 0%{?rhel} == 7
 . /opt/rh/devtoolset-7/enable
 %endif
-./configure --disable-optimizations --enable-libnbd
+
+%define libnbd --enable-libnbd
+%if 0%{?rhel} == 7
+%define libnbd %{nil}
+%endif
+
+./configure --disable-optimizations %{libnbd}
 EXTFLAGS="$RPM_OPT_FLAGS" LDFLAGS="$RPM_LD_FLAGS" make V=1 %{?_smp_mflags}
 
 %install

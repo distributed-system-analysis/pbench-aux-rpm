@@ -2,6 +2,14 @@ prog = fio
 version = 3.26
 arch = x86_64
 
+CHROOTS = \
+	-r centos-stream-8-x86_64 \
+	-r centos-stream-8-aarch64 \
+	-r epel-8-x86_64 \
+	-r epel-8-aarch64 \
+	-r epel-7-x86_64
+
+
 all: rpm-upstream
 
 rpm-upstream: all-but-build build

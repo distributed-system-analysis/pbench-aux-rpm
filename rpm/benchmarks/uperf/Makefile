@@ -2,7 +2,13 @@ prog = uperf
 version = 1.0.7
 arch = x86_64
 arch = aarch64
-CHROOTS = -r centos-stream-9-x86_64 -r centos-stream-9-aarch64 -r epel-9-x86_64 -r epel-9-aarch64
+
+CHROOTS = \
+	-r centos-stream-9-x86_64 \
+	-r centos-stream-9-aarch64 \
+	-r epel-9-x86_64 \
+	-r epel-9-aarch64
+
 ifdef COPR_USER
 _copr_user = ${COPR_USER}
 else
